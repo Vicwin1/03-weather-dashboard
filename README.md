@@ -4,8 +4,7 @@ A responsive weather dashboard built with plain HTML, CSS, and JavaScript ES mod
 
 ## Features
 
-- Current conditions and a seven-day forecast.
-- A six-hour forecast row with local hour labels and weather conditions.
+- Current conditions, a six-hour forecast, and a seven-day high/low forecast.
 - Search with a location picker when multiple cities match.
 - Save and remove favourite locations with the star button. Favourites persist in `localStorage`.
 - Select a saved favourite to load its forecast.
@@ -22,7 +21,7 @@ Weather data is provided by Open-Meteo:
 - Geocoding: `https://geocoding-api.open-meteo.com/v1/search`
 - Forecast: `https://api.open-meteo.com/v1/forecast`
 
-The app requests city matches, then loads current weather and daily high/low data for the selected coordinates. No API key is needed. Browser geolocation requires the user to grant permission and may require a secure context (HTTPS or localhost).
+The app requests city matches, then loads current weather, hourly temperature/conditions, and daily high/low data for the selected coordinates. The six-hour row displays local time, weather emoji, and temperature; the seven-day row displays the daily maximum and minimum. No API key is needed. Browser geolocation requires the user to grant permission and may require a secure context (HTTPS or localhost).
 
 ## Run locally
 

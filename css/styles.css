@@ -639,8 +639,60 @@ button {
   color: var(--color-sun);
 }
 
+.hourly-section {
+  margin-top: 54px;
+}
+
+.hourly-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.hourly-card,
+.hourly-skeleton {
+  min-height: 126px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.045);
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.hourly-card:first-child {
+  border-color: rgba(175, 180, 255, 0.28);
+  background: rgba(153, 159, 255, 0.09);
+}
+
+.hourly-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(175, 180, 255, 0.26);
+  background: rgba(255, 255, 255, 0.075);
+}
+
+.hourly-time {
+  color: var(--color-muted);
+  font-size: 10px;
+}
+
+.hourly-icon {
+  margin: 12px 0;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.hourly-temperature {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .forecast-section {
-  margin-top: 37px;
+  margin-top: 43px;
 }
 
 .section-title-row {
@@ -683,70 +735,14 @@ button {
   font-weight: 700;
 }
 
-.hourly-grid {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.hourly-card {
-  min-height: 112px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.045);
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
-}
-
-.hourly-card:first-child {
-  border-color: rgba(175, 180, 255, 0.28);
-  background: rgba(153, 159, 255, 0.09);
-}
-
-.hourly-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(175, 180, 255, 0.26);
-  background: rgba(255, 255, 255, 0.075);
-}
-
-.hourly-time {
-  color: var(--color-muted);
-  font-size: 10px;
-  font-weight: 500;
-}
-
-.hourly-icon {
-  font-size: 23px;
-  line-height: 1;
-}
-
-.hourly-temperature {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.hourly-skeleton {
-  min-height: 112px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.045);
-}
-
 .forecast-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
+}
+
+.hourly-skeleton {
+  gap: 12px;
 }
 
 .forecast-card {
@@ -1170,16 +1166,22 @@ button {
   }
 
   .forecast-section {
-    margin-top: 31px;
+    margin-top: 36px;
+  }
+
+  .hourly-section {
+    margin-top: 44px;
+  }
+
+  .hourly-grid {
+    grid-template-columns: repeat(6, minmax(70px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 5px;
+    scrollbar-width: thin;
   }
 
   .forecast-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .hourly-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
   }
 

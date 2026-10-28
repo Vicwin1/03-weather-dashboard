@@ -66,10 +66,8 @@ export async function getForecast(latitude, longitude, { signal } = {}) {
     if (data.error) {
       throw new Error(data.reason || "The weather service could not provide this forecast.");
     }
-    if (!data.current || !data.hourly || !Array.isArray(data.hourly.time)
-      || !Array.isArray(data.hourly.temperature_2m)
-      || !Array.isArray(data.hourly.weather_code)
-      || !data.daily || !Array.isArray(data.daily.time)) {
+    if (!data.current || !data.daily || !Array.isArray(data.daily.time)
+      || !data.hourly || !Array.isArray(data.hourly.time)) {
       throw new Error("The weather service returned incomplete forecast data.");
     }
     return data;

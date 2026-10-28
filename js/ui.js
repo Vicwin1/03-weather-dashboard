@@ -36,30 +36,68 @@ export function renderWeather(weather, unit, isFavourite) {
   document.querySelector("#humidity").textContent = weather.humidity;
   document.querySelector("#humidity-unit").textContent = weather.humidityUnit;
   updateFavouriteButton(isFavourite);
-  renderHourlyForecast(weather.hourly, unit);
+  renderHourlyForecast(weather.hourly, weather.timezone, unit);
   renderForecast(weather.forecast, unit);
   updateLocalTime(weather.timezone);
   setActiveFavourite(weather.city, weather.country);
 }
 
-export function renderHourlyForecast(hours, unit) {
+function dateFromZonedTime(value, timeZone) {
+  const [date, time] = value.split("T");
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const targetWallTime = Date.UTC(year, month - 1, day, hour, minute);
+  let timestamp = targetWallTime;
+
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const parts = Object.fromEntries(
+      formatter.formatToParts(new Date(timestamp))
+        .filter((part) => part.type !== "literal")
+        .map((part) => [part.type, Number(part.value)]),
+    );
+    const displayedWallTime = Date.UTC(
+      parts.year,
+      parts.month - 1,
+      parts.day,
+      parts.hour,
+      parts.minute,
+    );
+    const adjustment = targetWallTime - displayedWallTime;
+    timestamp += adjustment;
+    if (adjustment === 0) {
+      break;
+    }
+  }
+
+  return new Date(timestamp);
+}
+
+export function renderHourlyForecast(hourly, timeZone, unit) {
   const grid = document.querySelector("#hourly-grid");
-  const cards = hours.map((hour, index) => {
-    const localDate = new Date(`${hour.time}:00Z`);
-    const hourLabel = index === 0
-      ? "Now"
-      : new Intl.DateTimeFormat(undefined, {
-        hour: "numeric",
-        minute: "2-digit",
-        timeZone: "UTC",
-      }).format(localDate);
+  const hourFormatter = new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone,
+  });
+  const cards = hourly.map((hour) => {
+    const hourLabel = hourFormatter.format(dateFromZonedTime(hour.time, timeZone));
     const card = makeElement("article", "hourly-card");
     card.setAttribute(
       "aria-label",
-      `${hourLabel}: ${hour.condition}, ${convertTemperature(hour.temperature, unit)} degrees`,
+      `${hourLabel}: ${hour.label}, ${convertTemperature(hour.temperature, unit)} degrees`,
     );
     card.append(makeElement("span", "hourly-time", hourLabel));
-    const icon = makeElement("span", "hourly-icon", hour.icon);
+    const icon = makeElement("span", "hourly-icon", hour.emoji);
     icon.setAttribute("aria-hidden", "true");
     card.append(icon);
     card.append(makeElement("span", "hourly-temperature", `${convertTemperature(hour.temperature, unit)}°`));
@@ -192,7 +230,6 @@ export function setWeatherLoading(isLoading) {
       return card;
     });
     document.querySelector("#hourly-grid").replaceChildren(...hourlyCards);
-
     const cards = Array.from({ length: 7 }, () => {
       const card = makeElement("div", "forecast-skeleton");
       card.setAttribute("aria-hidden", "true");
