@@ -36,9 +36,36 @@ export function renderWeather(weather, unit, isFavourite) {
   document.querySelector("#humidity").textContent = weather.humidity;
   document.querySelector("#humidity-unit").textContent = weather.humidityUnit;
   updateFavouriteButton(isFavourite);
+  renderHourlyForecast(weather.hourly, unit);
   renderForecast(weather.forecast, unit);
   updateLocalTime(weather.timezone);
   setActiveFavourite(weather.city, weather.country);
+}
+
+export function renderHourlyForecast(hours, unit) {
+  const grid = document.querySelector("#hourly-grid");
+  const cards = hours.map((hour, index) => {
+    const localDate = new Date(`${hour.time}:00Z`);
+    const hourLabel = index === 0
+      ? "Now"
+      : new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "UTC",
+      }).format(localDate);
+    const card = makeElement("article", "hourly-card");
+    card.setAttribute(
+      "aria-label",
+      `${hourLabel}: ${hour.condition}, ${convertTemperature(hour.temperature, unit)} degrees`,
+    );
+    card.append(makeElement("span", "hourly-time", hourLabel));
+    const icon = makeElement("span", "hourly-icon", hour.icon);
+    icon.setAttribute("aria-hidden", "true");
+    card.append(icon);
+    card.append(makeElement("span", "hourly-temperature", `${convertTemperature(hour.temperature, unit)}°`));
+    return card;
+  });
+  grid.replaceChildren(...cards);
 }
 
 export function renderForecast(forecast, unit) {
@@ -154,6 +181,18 @@ export function setWeatherLoading(isLoading) {
   }
 
   if (isLoading) {
+    const hourlyCards = Array.from({ length: 6 }, () => {
+      const card = makeElement("div", "hourly-skeleton");
+      card.setAttribute("aria-hidden", "true");
+      card.append(
+        makeElement("span", "skeleton-line skeleton-day"),
+        makeElement("span", "skeleton-line skeleton-weather-icon"),
+        makeElement("span", "skeleton-line skeleton-temperatures"),
+      );
+      return card;
+    });
+    document.querySelector("#hourly-grid").replaceChildren(...hourlyCards);
+
     const cards = Array.from({ length: 7 }, () => {
       const card = makeElement("div", "forecast-skeleton");
       card.setAttribute("aria-hidden", "true");

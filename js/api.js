@@ -56,6 +56,7 @@ export async function getForecast(latitude, longitude, { signal } = {}) {
     latitude: String(latitude),
     longitude: String(longitude),
     current: "temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m",
+    hourly: "temperature_2m,weather_code",
     daily: "weather_code,temperature_2m_max,temperature_2m_min",
     timezone: "auto",
   });
@@ -65,7 +66,10 @@ export async function getForecast(latitude, longitude, { signal } = {}) {
     if (data.error) {
       throw new Error(data.reason || "The weather service could not provide this forecast.");
     }
-    if (!data.current || !data.daily || !Array.isArray(data.daily.time)) {
+    if (!data.current || !data.hourly || !Array.isArray(data.hourly.time)
+      || !Array.isArray(data.hourly.temperature_2m)
+      || !Array.isArray(data.hourly.weather_code)
+      || !data.daily || !Array.isArray(data.daily.time)) {
       throw new Error("The weather service returned incomplete forecast data.");
     }
     return data;

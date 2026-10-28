@@ -142,7 +142,9 @@ function renderSavedLocations() {
 function createWeatherModel(city, forecast) {
   const current = forecast.current;
   const currentCode = getWeatherCode(current.weather_code);
+  const hourly = forecast.hourly;
   const daily = forecast.daily;
+  const firstHour = Math.max(0, hourly.time.findIndex((time) => time >= current.time));
 
   return {
     ...parseLocation(city),
@@ -155,6 +157,16 @@ function createWeatherModel(city, forecast) {
     windUnit: forecast.current_units.wind_speed_10m,
     humidity: current.relative_humidity_2m,
     humidityUnit: forecast.current_units.relative_humidity_2m,
+    hourly: hourly.time.slice(firstHour, firstHour + 6).map((time, index) => {
+      const hourlyIndex = firstHour + index;
+      const code = getWeatherCode(hourly.weather_code[hourlyIndex]);
+      return {
+        time,
+        temperature: hourly.temperature_2m[hourlyIndex],
+        condition: code.label,
+        icon: code.emoji,
+      };
+    }),
     forecast: daily.time.map((date, index) => {
       const code = getWeatherCode(daily.weather_code[index]);
       return {
@@ -188,6 +200,7 @@ function finishLoading() {
   if (currentWeather) {
     renderWeather(currentWeather, unit, isFavourite(currentWeather));
   } else {
+    document.querySelector("#hourly-grid").replaceChildren();
     document.querySelector("#forecast-grid").replaceChildren();
   }
 }

@@ -5,6 +5,7 @@ A responsive weather dashboard built with plain HTML, CSS, and JavaScript ES mod
 ## Features
 
 - Current conditions and a seven-day forecast.
+- A six-hour forecast row with local hour labels and weather conditions.
 - Search with a location picker when multiple cities match.
 - Save and remove favourite locations with the star button. Favourites persist in `localStorage`.
 - Select a saved favourite to load its forecast.
