@@ -52,6 +52,9 @@
             <button type="submit">Search</button>
           </form>
           <ul class="city-results glass-card" id="city-results" aria-label="Matching locations" hidden></ul>
+          <button class="location-button" id="use-location" type="button">
+            <span aria-hidden="true">⌖</span> Use my location
+          </button>
         </div>
 
         <div class="header-date" id="header-date"></div>
@@ -83,7 +86,10 @@
                   <span id="country-name">—</span>
                 </p>
               </div>
-              <div class="weather-icon" id="weather-icon" aria-label="Weather conditions">—</div>
+              <div class="hero-actions">
+                <button class="favourite-toggle" id="favourite-toggle" type="button" aria-pressed="false" aria-label="Add city to favourites">☆</button>
+                <div class="weather-icon" id="weather-icon" aria-label="Weather conditions">—</div>
+              </div>
             </div>
 
             <div class="temperature-block">
@@ -142,6 +148,7 @@
             <button class="manage-button" id="manage-favourites" type="button">
               <span aria-hidden="true">＋</span> Manage locations
             </button>
+            <p class="favourites-empty" id="favourites-empty" hidden>No favourites yet. Star a city to save it here.</p>
           </section>
 
           <section class="tip-card glass-card" aria-label="Weather tip">

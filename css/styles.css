@@ -92,6 +92,9 @@ button {
   position: relative;
   width: min(432px, 44vw);
   z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .search-form {
@@ -192,6 +195,27 @@ button {
 .city-choice:focus-visible {
   outline: 0;
   background: rgba(255, 255, 255, 0.1);
+}
+
+.location-button {
+  align-self: flex-start;
+  padding: 1px 5px;
+  border: 0;
+  color: #b7bce0;
+  background: transparent;
+  font-size: 10px;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.location-button:hover {
+  color: var(--color-text);
+}
+
+.location-button span {
+  margin-right: 3px;
+  color: var(--color-accent);
+  font-size: 13px;
 }
 
 .header-date {
@@ -300,6 +324,124 @@ button {
   background:
     radial-gradient(ellipse at 83% 18%, rgba(163, 165, 255, 0.2), transparent 24rem),
     linear-gradient(118deg, rgba(255, 255, 255, 0.115), rgba(255, 255, 255, 0.045));
+}
+
+.hero-card.is-loading > :not(.hero-glow):not(.weather-skeleton) {
+  visibility: hidden;
+}
+
+.weather-skeleton {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  padding: 34px;
+  pointer-events: none;
+}
+
+.skeleton-line {
+  display: block;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(210, 214, 255, 0.07), rgba(210, 214, 255, 0.2), rgba(210, 214, 255, 0.07));
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-title {
+  width: 120px;
+  height: 9px;
+}
+
+.skeleton-city {
+  width: min(220px, 48%);
+  height: 25px;
+}
+
+.skeleton-temperature {
+  width: 170px;
+  height: 76px;
+  margin-top: 12px;
+}
+
+.skeleton-condition {
+  width: 150px;
+  height: 12px;
+}
+
+.skeleton-details {
+  width: 75%;
+  height: 34px;
+  margin-top: 20px;
+}
+
+.forecast-skeleton {
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 13px 6px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.skeleton-day {
+  width: 36px;
+  height: 8px;
+}
+
+.skeleton-weather-icon {
+  width: 25px;
+  height: 25px;
+}
+
+.skeleton-temperatures {
+  width: 46px;
+  height: 9px;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+.hero-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.favourite-toggle {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  margin-top: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 11px;
+  color: #e0c3ff;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.favourite-toggle:hover {
+  transform: translateY(-2px);
+  color: #fff0a8;
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.favourite-toggle[aria-pressed="true"] {
+  color: #ffe294;
 }
 
 .hero-glow {
@@ -636,6 +778,13 @@ button {
   font-size: 11px;
 }
 
+.favourites-empty {
+  margin: 14px 0 2px;
+  color: var(--color-subtle);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
 .favourites-list {
   display: flex;
   flex-direction: column;
@@ -875,6 +1024,10 @@ button {
     margin-top: 14px;
   }
 
+  .location-button {
+    padding-left: 2px;
+  }
+
   .dashboard {
     gap: 25px;
     padding: 31px 0 38px;
@@ -1029,5 +1182,9 @@ button {
   *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .skeleton-line {
+    animation: none;
   }
 }

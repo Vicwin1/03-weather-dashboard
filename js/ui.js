@@ -23,7 +23,7 @@ function makeElement(tag, className, text) {
   return element;
 }
 
-export function renderWeather(weather, unit) {
+export function renderWeather(weather, unit, isFavourite) {
   document.querySelector("#city-name").textContent = weather.city;
   document.querySelector("#country-name").textContent = weather.country || "Country unavailable";
   document.querySelector("#temperature").textContent = convertTemperature(weather.temperature, unit);
@@ -35,6 +35,7 @@ export function renderWeather(weather, unit) {
   document.querySelector("#wind-unit").textContent = weather.windUnit;
   document.querySelector("#humidity").textContent = weather.humidity;
   document.querySelector("#humidity-unit").textContent = weather.humidityUnit;
+  updateFavouriteButton(isFavourite);
   renderForecast(weather.forecast, unit);
   updateLocalTime(weather.timezone);
   setActiveFavourite(weather.city, weather.country);
@@ -69,17 +70,19 @@ export function renderForecast(forecast, unit) {
   grid.replaceChildren(...cards);
 }
 
-export function renderFavourites(favourites, selectedCity, selectedCountry = "") {
+export function renderFavourites(favourites, selectedLocation = {}) {
   const list = document.querySelector("#favourites-list");
-  const items = favourites.map((city) => {
+  const items = favourites.map((city, index) => {
     const item = makeElement("li");
     const button = makeElement("button", "favourite-button");
     button.type = "button";
-    button.dataset.city = city.name;
+    button.dataset.favouriteIndex = String(index);
     button.setAttribute(
       "aria-current",
-      String(city.name.toLowerCase() === selectedCity.toLowerCase()
-        && city.country.toLowerCase() === selectedCountry.toLowerCase()),
+      String(city.name.toLowerCase() === (selectedLocation.name ?? "").toLowerCase()
+        && city.country.toLowerCase() === (selectedLocation.country ?? "").toLowerCase()
+        && city.latitude === selectedLocation.latitude
+        && city.longitude === selectedLocation.longitude),
     );
     button.setAttribute("aria-label", `Show weather for ${city.name}, ${city.country}`);
 
@@ -96,6 +99,15 @@ export function renderFavourites(favourites, selectedCity, selectedCountry = "")
   });
   list.replaceChildren(...items);
   document.querySelector("#favourite-count").textContent = String(favourites.length).padStart(2, "0");
+  document.querySelector("#favourites-empty").hidden = favourites.length > 0;
+  list.hidden = favourites.length === 0;
+}
+
+export function updateFavouriteButton(isFavourite) {
+  const button = document.querySelector("#favourite-toggle");
+  button.textContent = isFavourite ? "★" : "☆";
+  button.setAttribute("aria-pressed", String(isFavourite));
+  button.setAttribute("aria-label", isFavourite ? "Remove city from favourites" : "Add city to favourites");
 }
 
 export function renderCityChoices(cities) {
@@ -117,6 +129,43 @@ export function renderCityChoices(cities) {
 
 export function clearCityChoices() {
   renderCityChoices([]);
+}
+
+export function setWeatherLoading(isLoading) {
+  const hero = document.querySelector("#current-weather");
+  const grid = document.querySelector("#forecast-grid");
+
+  hero.classList.toggle("is-loading", isLoading);
+  hero.setAttribute("aria-busy", String(isLoading));
+  const existingSkeleton = hero.querySelector(".weather-skeleton");
+  if (isLoading && !existingSkeleton) {
+    const skeleton = makeElement("div", "weather-skeleton");
+    skeleton.setAttribute("aria-hidden", "true");
+    skeleton.append(
+      makeElement("span", "skeleton-line skeleton-title"),
+      makeElement("span", "skeleton-line skeleton-city"),
+      makeElement("span", "skeleton-line skeleton-temperature"),
+      makeElement("span", "skeleton-line skeleton-condition"),
+      makeElement("span", "skeleton-line skeleton-details"),
+    );
+    hero.append(skeleton);
+  } else if (!isLoading) {
+    existingSkeleton?.remove();
+  }
+
+  if (isLoading) {
+    const cards = Array.from({ length: 7 }, () => {
+      const card = makeElement("div", "forecast-skeleton");
+      card.setAttribute("aria-hidden", "true");
+      card.append(
+        makeElement("span", "skeleton-line skeleton-day"),
+        makeElement("span", "skeleton-line skeleton-weather-icon"),
+        makeElement("span", "skeleton-line skeleton-temperatures"),
+      );
+      return card;
+    });
+    grid.replaceChildren(...cards);
+  }
 }
 
 export function updateUnitButtons(unit) {
@@ -151,11 +200,12 @@ export function clearStatus() {
 
 function setActiveFavourite(cityName, countryName) {
   document.querySelectorAll(".favourite-button").forEach((button) => {
+    const name = button.querySelector(".favourite-location strong")?.textContent ?? "";
     const country = button.querySelector(".favourite-location span")?.textContent ?? "";
     button.setAttribute(
       "aria-current",
-      String(button.dataset.city.toLowerCase() === cityName.toLowerCase()
-        && country.toLowerCase() === countryName.toLowerCase()),
+      String(name.toLowerCase() === cityName.toLowerCase()
+        && country.toLowerCase() === (countryName ?? "").toLowerCase()),
     );
   });
 }
