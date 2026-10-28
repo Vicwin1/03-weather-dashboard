@@ -1,11 +1,14 @@
 const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 
-export async function fetchJson(url) {
+export async function fetchJson(url, { signal } = {}) {
   let response;
   try {
-    response = await fetch(url);
+    response = await fetch(url, { signal });
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
     const reason = error instanceof Error ? `: ${error.message}` : "";
     throw new Error(`Could not connect to the weather service${reason}`);
   }
@@ -21,7 +24,7 @@ export async function fetchJson(url) {
   }
 }
 
-export async function searchCity(name) {
+export async function searchCity(name, { signal } = {}) {
   const cityName = name.trim();
   if (!cityName) {
     return [];
@@ -30,21 +33,25 @@ export async function searchCity(name) {
   const url = `${GEOCODING_URL}?name=${encodeURIComponent(cityName)}&count=5`;
   let data;
   try {
-    data = await fetchJson(url);
+    data = await fetchJson(url, { signal });
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
     throw new Error(`City search failed: ${error instanceof Error ? error.message : "unknown error"}`);
   }
 
   return (data.results ?? []).map((city) => ({
     name: city.name,
     country: city.country ?? "",
+    region: city.admin1 ?? city.admin2 ?? "",
     latitude: city.latitude,
     longitude: city.longitude,
     timezone: city.timezone ?? "UTC",
   }));
 }
 
-export async function getForecast(latitude, longitude) {
+export async function getForecast(latitude, longitude, { signal } = {}) {
   const params = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
@@ -54,7 +61,7 @@ export async function getForecast(latitude, longitude) {
   });
 
   try {
-    const data = await fetchJson(`${FORECAST_URL}?${params}`);
+    const data = await fetchJson(`${FORECAST_URL}?${params}`, { signal });
     if (data.error) {
       throw new Error(data.reason || "The weather service could not provide this forecast.");
     }
@@ -63,6 +70,9 @@ export async function getForecast(latitude, longitude) {
     }
     return data;
   } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw error;
+    }
     throw new Error(`Forecast request failed: ${error instanceof Error ? error.message : "unknown error"}`);
   }
 }

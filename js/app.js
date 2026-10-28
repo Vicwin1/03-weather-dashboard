@@ -1,18 +1,21 @@
 import { getForecast, searchCity } from "./api.js";
 import { getWeatherCode } from "./weatherCodes.js";
 import {
+  clearCityChoices,
   clearStatus,
+  renderCityChoices,
   renderFavourites,
   renderWeather,
   showStatus,
   updateLocalTime,
+  updateUnitButtons,
 } from "./ui.js";
 
 const searchForm = document.querySelector("#search-form");
 const searchInput = document.querySelector("#city-search");
+const cityResults = document.querySelector("#city-results");
 const favouritesList = document.querySelector("#favourites-list");
 const manageFavouritesButton = document.querySelector("#manage-favourites");
-
 const favourites = [
   { name: "London", country: "United Kingdom" },
   { name: "New York", country: "United States" },
@@ -21,7 +24,31 @@ const favourites = [
 ];
 
 let currentTimezone = "UTC";
-let requestId = 0;
+let currentWeather;
+let unit = readStoredUnit();
+let activeController;
+let searchMatches = [];
+
+function readStoredUnit() {
+  try {
+    return localStorage.getItem("atmos-temperature-unit") === "F" ? "F" : "C";
+  } catch {
+    return "C";
+  }
+}
+
+function storeUnit(nextUnit) {
+  unit = nextUnit;
+  try {
+    localStorage.setItem("atmos-temperature-unit", unit);
+  } catch {
+    showStatus("Unit changed for this session; browser storage is unavailable.");
+  }
+  updateUnitButtons(unit);
+  if (currentWeather) {
+    renderWeather(currentWeather, unit);
+  }
+}
 
 function createWeatherModel(city, forecast) {
   const current = forecast.current;
@@ -32,8 +59,7 @@ function createWeatherModel(city, forecast) {
     city: city.name,
     country: city.country,
     timezone: forecast.timezone || city.timezone,
-    temperature: Math.round(current.temperature_2m),
-    temperatureUnit: forecast.current_units.temperature_2m,
+    temperature: current.temperature_2m,
     condition: currentCode.label,
     icon: currentCode.emoji,
     windSpeed: Math.round(current.wind_speed_10m),
@@ -46,62 +72,102 @@ function createWeatherModel(city, forecast) {
         date,
         condition: code.label,
         icon: code.emoji,
-        high: Math.round(daily.temperature_2m_max[index]),
-        low: Math.round(daily.temperature_2m_min[index]),
+        high: daily.temperature_2m_max[index],
+        low: daily.temperature_2m_min[index],
       };
     }),
   };
 }
 
-async function loadWeather(cityName) {
-  const city = cityName.trim();
-  const currentRequestId = ++requestId;
-  clearStatus();
-  showStatus("Loading…");
+function isCurrentRequest(controller) {
+  return activeController === controller && !controller.signal.aborted;
+}
 
-  let matches;
-  try {
-    matches = await searchCity(city);
-  } catch (error) {
-    if (currentRequestId === requestId) {
-      showStatus(error instanceof Error ? error.message : "Could not search for that city.", "error");
-    }
-    return;
-  }
-
-  if (currentRequestId !== requestId) {
-    return;
-  }
-  if (matches.length === 0) {
-    showStatus(`We couldn't find "${city}". Check the spelling and try another city.`, "error");
-    return;
-  }
-
+async function loadForecast(city, controller) {
   let forecast;
   try {
-    forecast = await getForecast(matches[0].latitude, matches[0].longitude);
+    forecast = await getForecast(city.latitude, city.longitude, { signal: controller.signal });
   } catch (error) {
-    if (currentRequestId === requestId) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return;
+    }
+    if (isCurrentRequest(controller)) {
       showStatus(error instanceof Error ? error.message : "Could not load the weather forecast.", "error");
     }
     return;
   }
 
-  if (currentRequestId !== requestId) {
+  if (!isCurrentRequest(controller)) {
     return;
   }
 
-  const weather = createWeatherModel(matches[0], forecast);
-  currentTimezone = weather.timezone;
-  renderWeather(weather);
-  renderFavourites(favourites, weather.city);
-  searchInput.value = weather.city;
-  showStatus(`Current weather for ${weather.city} updated from Open-Meteo.`);
+  try {
+    currentWeather = createWeatherModel(city, forecast);
+    currentTimezone = currentWeather.timezone;
+    renderWeather(currentWeather, unit);
+    renderFavourites(favourites, currentWeather.city, currentWeather.country);
+    searchInput.value = currentWeather.city;
+    showStatus(`Current weather for ${currentWeather.city} updated from Open-Meteo.`);
+  } catch (error) {
+    showStatus(error instanceof Error ? `Could not display the forecast: ${error.message}` : "Could not display the forecast.", "error");
+  }
+}
+
+async function loadWeather(cityName) {
+  activeController?.abort();
+  const controller = new AbortController();
+  activeController = controller;
+  clearStatus();
+  clearCityChoices();
+  searchMatches = [];
+  showStatus("Loading…");
+
+  let matches;
+  try {
+    matches = await searchCity(cityName, { signal: controller.signal });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return;
+    }
+    if (isCurrentRequest(controller)) {
+      showStatus(error instanceof Error ? error.message : "Could not search for that city.", "error");
+    }
+    return;
+  }
+
+  if (!isCurrentRequest(controller)) {
+    return;
+  }
+  if (matches.length === 0) {
+    showStatus(`We couldn't find "${cityName.trim()}". Check the spelling and try another city.`, "error");
+    return;
+  }
+  if (matches.length > 1) {
+    searchMatches = matches;
+    renderCityChoices(matches);
+    showStatus("Several locations matched. Choose the city you meant.");
+    return;
+  }
+
+  void loadForecast(matches[0], controller);
 }
 
 searchForm.addEventListener("submit", (event) => {
   event.preventDefault();
   void loadWeather(searchInput.value);
+});
+
+cityResults.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-choice-index]");
+  if (!button) {
+    return;
+  }
+  const city = searchMatches[Number(button.dataset.choiceIndex)];
+  if (city) {
+    clearCityChoices();
+    showStatus("Loading…");
+    void loadForecast(city, activeController);
+  }
 });
 
 favouritesList.addEventListener("click", (event) => {
@@ -111,12 +177,20 @@ favouritesList.addEventListener("click", (event) => {
   }
 });
 
+document.querySelector("#unit-toggle").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-unit]");
+  if (button && (button.dataset.unit === "C" || button.dataset.unit === "F")) {
+    storeUnit(button.dataset.unit);
+  }
+});
+
 manageFavouritesButton.addEventListener("click", () => {
   searchInput.focus();
   showStatus("Search for a city or choose one of your saved locations.");
 });
 
 renderFavourites(favourites, "");
+updateUnitButtons(unit);
 void loadWeather("London");
 
 window.setInterval(() => {
